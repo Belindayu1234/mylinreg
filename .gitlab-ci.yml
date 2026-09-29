@@ -1,0 +1,40 @@
+image: rocker/tidyverse
+
+stages:
+  - build
+  - test
+  - deploy
+
+building:
+  stage: build
+  script:
+    - R -e 'install.packages("remotes", repos="https://cran.rstudio.com")'
+    - R -e 'remotes::install_deps(dependencies = TRUE)'
+    - R -e 'devtools::check()'
+
+testing:
+  stage: test
+  allow_failure: true
+  when: on_success
+  only:
+    - main
+  coverage: '/coverage: \d+\.\d+% of statements/'
+  script:
+    - Rscript -e 'install.packages("DT")'
+    - Rscript -e 'install.packages("covr")'
+    - Rscript -e 'covr::gitlab(quiet = FALSE)'
+  artifacts:
+    paths:
+      - public
+
+pages:
+  stage: deploy
+  dependencies:
+    - testing
+  script:
+    - echo "Nothing to do here"
+  artifacts:
+    paths:
+      - public
+  only:
+    - main

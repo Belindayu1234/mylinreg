@@ -1,0 +1,24 @@
+Package: mylinreg
+Title: Linear Regression implemented by matrix algebra
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Wenjuan", "Li",
+      email = "wenli420@student.liu.se",
+      role = c("aut", "cre")),
+      person(
+      "Qianwen", "Yu",
+      email = "qiayu183@student.liu.se",
+      role = c("aut")
+    )
+  )
+Description: Implements linear regression using matrix algebra for Advanced R course Lab4.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    ggplot2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
