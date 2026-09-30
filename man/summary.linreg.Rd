@@ -2,15 +2,18 @@
 % Please edit documentation in R/linreg.R
 \name{summary.linreg}
 \alias{summary.linreg}
-\title{Summary method for linreg}
+\title{Summary S3 method for linreg object}
 \usage{
 \method{summary}{linreg}(object, ...)
 }
 \arguments{
-\item{object}{object of class linreg}
+\item{object}{Object of class linreg}
 
-\item{...}{further arguments}
+\item{...}{Additional arguments}
+}
+\value{
+Object of S3 class summary.linreg (invisible)
 }
 \description{
-Summary method for linreg
+Computes summary statistics AND prints output directly (to satisfy lab test expect_output)
 }

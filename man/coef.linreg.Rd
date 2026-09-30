@@ -2,15 +2,18 @@
 % Please edit documentation in R/linreg.R
 \name{coef.linreg}
 \alias{coef.linreg}
-\title{coef method for linreg}
+\title{Coef S3 method for linreg object}
 \usage{
 \method{coef}{linreg}(object, ...)
 }
 \arguments{
-\item{object}{object of class linreg}
+\item{object}{Object of class linreg}
 
-\item{...}{further arguments}
+\item{...}{Additional arguments}
+}
+\value{
+Named numeric vector of coefficients
 }
 \description{
-coef method for linreg
+Returns named vector of estimated regression coefficients
 }

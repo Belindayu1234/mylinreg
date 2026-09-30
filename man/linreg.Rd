@@ -2,23 +2,18 @@
 % Please edit documentation in R/linreg.R
 \name{linreg}
 \alias{linreg}
-\title{Linear Regression using Ordinary Least Squares}
+\title{Linear Regression Function}
 \usage{
 linreg(formula, data)
 }
 \arguments{
-\item{formula}{an object of class formula}
+\item{formula}{Regression formula defining the model}
 
-\item{data}{a data frame}
+\item{data}{Input data frame containing model variables}
 }
 \value{
-An S3 object of class \code{linreg} containing regression quantities.
+Object of S3 class "linreg" storing all regression results
 }
 \description{
-Fits a multiple linear regression model using matrix algebra.
-Returns an S3 object of class linreg.
-}
-\examples{
-mod <- linreg(Petal.Length ~ Species, data = iris)
-print(mod)
+Fits multiple linear regression using ordinary least squares, returns S3 linreg object
 }

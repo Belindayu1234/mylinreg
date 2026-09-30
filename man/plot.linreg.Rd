@@ -2,15 +2,15 @@
 % Please edit documentation in R/linreg.R
 \name{plot.linreg}
 \alias{plot.linreg}
-\title{Plot method for linreg: two ggplot figures}
+\title{Plot S3 method for linreg object}
 \usage{
 \method{plot}{linreg}(x, ...)
 }
 \arguments{
-\item{x}{linreg object}
+\item{x}{Object of class linreg}
 
-\item{...}{further arguments}
+\item{...}{Additional arguments passed to plotting functions}
 }
 \description{
-Produces Residuals vs Fitted and Scale Location plots
+Generates two diagnostic ggplot2 plots: Residuals vs Fitted and ScaleLocation
 }

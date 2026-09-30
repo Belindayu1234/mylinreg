@@ -2,15 +2,15 @@
 % Please edit documentation in R/linreg.R
 \name{print.linreg}
 \alias{print.linreg}
-\title{Print method for linreg S3 class}
+\title{Print S3 method for linreg object}
 \usage{
 \method{print}{linreg}(x, ...)
 }
 \arguments{
-\item{x}{object of class linreg}
+\item{x}{Object of class linreg}
 
-\item{...}{further arguments}
+\item{...}{Additional arguments}
 }
 \description{
-Print method for linreg S3 class
+Prints function call and regression coefficients, similar to lm() output
 }

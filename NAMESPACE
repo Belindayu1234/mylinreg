@@ -4,8 +4,11 @@ S3method(coef,linreg)
 S3method(plot,linreg)
 S3method(pred,linreg)
 S3method(print,linreg)
-S3method(print,summary.linreg)
-S3method(residuals,linreg)
 S3method(summary,linreg)
 export(linreg)
 export(pred)
+importFrom(stats,
+  fitted,
+  printCoefmat,
+  residuals
+)

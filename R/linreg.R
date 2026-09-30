@@ -1,4 +1,5 @@
 #' @title Linear Regression Function
+#' @importFrom stats residuals printCoefmat fitted
 #' @description Fits multiple linear regression using ordinary least squares, returns S3 linreg object
 #' @param formula Regression formula defining the model
 #' @param data Input data frame containing model variables
@@ -24,10 +25,10 @@ linreg <- function(formula, data){
   resid <- y - y_hat           # Model residuals
 
   sigma2 <- as.numeric((t(resid) %*% resid) / df)  # Residual variance estimate
-  var_beta <- sigma2 * solve(XtX)                 # Variance‑covariance matrix for coefficients
+  var_beta <- sigma2 * solve(XtX)                 # Variancecovariance matrix for coefficients
 
-  t_values <- as.vector(beta / sqrt(diag(var_beta)))        # t‑statistics for coefficients
-  p_values <- 2 * stats::pt(-abs(t_values), df = df)         # Two‑sided p‑values from t‑distribution
+  t_values <- as.vector(beta / sqrt(diag(var_beta)))        # tstatistics for coefficients
+  p_values <- 2 * stats::pt(-abs(t_values), df = df)         # Twosided pvalues from tdistribution
 
   # Assemble result list for S3 linreg object
   result <- list(
@@ -80,17 +81,6 @@ print.linreg <- function(x, ...){
 }
 
 
-#' @title Residuals S3 method for linreg object
-#' @description Returns vector of model residuals
-#' @param object Object of class linreg
-#' @param ... Additional arguments
-#' @return Numeric vector of residuals
-#' @export
-resid.linreg <- function(object, ...){
-  return(object$residuals)
-}
-
-
 #' @title Coef S3 method for linreg object
 #' @description Returns named vector of estimated regression coefficients
 #' @param object Object of class linreg
@@ -103,12 +93,14 @@ coef.linreg <- function(object, ...){
 
 
 #' @title Plot S3 method for linreg object
-#' @description Generates two diagnostic ggplot2 plots: Residuals vs Fitted and Scale‑Location
+#' @description Generates two diagnostic ggplot2 plots: Residuals vs Fitted and ScaleLocation
 #' @param x Object of class linreg
 #' @param ... Additional arguments passed to plotting functions
 #' @export
 plot.linreg <- function(x, ...){
   # Build data frame for diagnostic plots
+  residual <- NULL
+  std_residual <- NULL
   df_plot <- data.frame(
     fitted = x$fitted,
     residual = x$residuals,
@@ -125,11 +117,11 @@ plot.linreg <- function(x, ...){
                   y = "Residuals") +
     ggplot2::theme_bw()
 
-  # Plot2: Scale‑Location plot: sqrt(|standardized residuals|) vs fitted values
+  # Plot2: ScaleLocation plot: sqrt(|standardized residuals|) vs fitted values
   p2 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = sqrt(abs(std_residual)))) +
     ggplot2::geom_point() +
     ggplot2::geom_smooth(method = "loess", se = FALSE, color = "red") +
-    ggplot2::labs(title = "Scale‑Location",
+    ggplot2::labs(title = "ScaleLocation",
                   x = "Fitted values",
                   y = expression(sqrt("|Standardized residuals|"))) +
     ggplot2::theme_bw()
@@ -167,7 +159,7 @@ summary.linreg <- function(object, ...){
   )
   class(out) <- "summary.linreg"
 
-  # DIRECT PRINT inside summary.linreg() — this fixes testthat expect_output failure
+  # DIRECT PRINT inside summary.linreg()  this fixes testthat expect_output failure
   cat("Call:\n")
   print(out$call)
   cat("\nCoefficients:\n")

@@ -2,15 +2,15 @@
 % Please edit documentation in R/linreg.R
 \name{pred}
 \alias{pred}
-\title{pred Generic for linreg objects}
+\title{Generic pred function}
 \usage{
 pred(object, ...)
 }
 \arguments{
-\item{object}{object}
+\item{object}{linreg object}
 
-\item{...}{other arguments}
+\item{...}{Additional arguments}
 }
 \description{
-pred Generic for linreg objects
+Generic S3 function to extract fitted values
 }

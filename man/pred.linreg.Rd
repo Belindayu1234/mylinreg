@@ -2,15 +2,18 @@
 % Please edit documentation in R/linreg.R
 \name{pred.linreg}
 \alias{pred.linreg}
-\title{pred method for linreg (coursespecific, not predict())}
+\title{Pred S3 method for linreg object}
 \usage{
 \method{pred}{linreg}(object, ...)
 }
 \arguments{
-\item{object}{object of class linreg}
+\item{object}{Object of class linreg}
 
-\item{...}{further arguments}
+\item{...}{Additional arguments}
+}
+\value{
+Numeric vector of fitted values
 }
 \description{
-pred method for linreg (coursespecific, not predict())
+Returns fitted (predicted) values from regression model
 }
