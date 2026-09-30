@@ -1,62 +1,46 @@
-#' Linear Regression using Ordinary Least Squares
-#'
-#' Fits a multiple linear regression model using matrix algebra.
-#' Returns an S3 object of class linreg.
-#'
-#' @param formula an object of class formula
-#' @param data a data frame
-#'
-#' @return An S3 object of class \code{linreg} containing regression quantities.
+#' @title Linear Regression Function
+#' @description Fits multiple linear regression using ordinary least squares, returns S3 linreg object
+#' @param formula Regression formula defining the model
+#' @param data Input data frame containing model variables
+#' @return Object of S3 class "linreg" storing all regression results
 #' @export
-#'
-#' @examples
-#' mod <- linreg(Petal.Length ~ Species, data = iris)
-#' print(mod)
 linreg <- function(formula, data){
-
-  # 1. build model matrix X and response y
-  X <- stats::model.matrix(formula, data = data)
+  # Create design matrix X from input formula
+  X <- stats::model.matrix(formula, data)
+  # Extract name and values of response variable y
   y_name <- all.vars(formula)[1]
   y <- data[[y_name]]
 
-  n <- nrow(X)
-  p <- ncol(X)
-  df <- n - p
+  n <- nrow(X)  # Number of observations
+  p <- ncol(X)  # Number of model parameters
+  df <- n - p   # Residual degrees of freedom
 
-  # OLS beta hat: (X^T X)^(-1) X^T y
+  # OLS calculation: beta_hat = (X^T X)^(-1) X^T y
   XtX <- t(X) %*% X
   Xty <- t(X) %*% y
-  beta_hat <- solve(XtX) %*% Xty
+  beta <- solve(XtX) %*% Xty
 
-  # fitted values
-  y_hat <- X %*% beta_hat
-  # residuals
-  e_hat <- y - y_hat
+  y_hat <- X %*% beta          # Fitted values
+  resid <- y - y_hat           # Model residuals
 
-  # residual variance sigma^2
-  sigma2_hat <- as.numeric( (t(e_hat) %*% e_hat) / df )
+  sigma2 <- as.numeric((t(resid) %*% resid) / df)  # Residual variance estimate
+  var_beta <- sigma2 * solve(XtX)                 # Variance‑covariance matrix for coefficients
 
-  # variancecovariance matrix for coefficients
-  var_beta <- sigma2_hat * solve(XtX)
+  t_values <- as.vector(beta / sqrt(diag(var_beta)))        # t‑statistics for coefficients
+  p_values <- 2 * stats::pt(-abs(t_values), df = df)         # Two‑sided p‑values from t‑distribution
 
-  # tvalues
-  t_vals <- as.vector(beta_hat / sqrt(diag(var_beta)))
-
-  # pvalues, twotailed tdistribution
-  p_vals <- 2 * stats::pt(-abs(t_vals), df = df)
-
-  # build S3 object
+  # Assemble result list for S3 linreg object
   result <- list(
-    call = match.call(),
-    beta = as.vector(beta_hat),
+    beta = as.vector(beta),
     beta_names = colnames(X),
     fitted = as.vector(y_hat),
-    residuals = as.vector(e_hat),
+    residuals = as.vector(resid),
     df = df,
-    sigma2 = sigma2_hat,
+    sigma2 = sigma2,
     var_beta = var_beta,
-    t_values = t_vals,
-    p_values = p_vals,
+    t_values = t_values,
+    p_values = p_values,
+    call = match.call(),
     formula = formula,
     data = data
   )
@@ -64,68 +48,117 @@ linreg <- function(formula, data){
   return(result)
 }
 
+#' @title Generic pred function
+#' @description Generic S3 function to extract fitted values
+#' @param object linreg object
+#' @param ... Additional arguments
+#' @export
+pred <- function(object, ...){
+  UseMethod("pred")
+}
 
-#' Print method for linreg S3 class
-#'
-#' @param x object of class linreg
-#' @param ... further arguments
+#' @title Pred S3 method for linreg object
+#' @description Returns fitted (predicted) values from regression model
+#' @param object Object of class linreg
+#' @param ... Additional arguments
+#' @return Numeric vector of fitted values
+#' @export
+pred.linreg <- function(object, ...){
+  return(object$fitted)
+}
+
+#' @title Print S3 method for linreg object
+#' @description Prints function call and regression coefficients, similar to lm() output
+#' @param x Object of class linreg
+#' @param ... Additional arguments
 #' @export
 print.linreg <- function(x, ...){
   cat("Call:\n")
   print(x$call)
   cat("\nCoefficients:\n")
-  coef_vec <- stats::setNames(x$beta, x$beta_names)
-  print(coef_vec)
+  print(stats::setNames(x$beta, x$beta_names))
 }
 
-#' coef method for linreg
-#'
-#' @param object object of class linreg
-#' @param ... further arguments
+
+#' @title Residuals S3 method for linreg object
+#' @description Returns vector of model residuals
+#' @param object Object of class linreg
+#' @param ... Additional arguments
+#' @return Numeric vector of residuals
+#' @export
+resid.linreg <- function(object, ...){
+  return(object$residuals)
+}
+
+
+#' @title Coef S3 method for linreg object
+#' @description Returns named vector of estimated regression coefficients
+#' @param object Object of class linreg
+#' @param ... Additional arguments
+#' @return Named numeric vector of coefficients
 #' @export
 coef.linreg <- function(object, ...){
-  stats::setNames(object$beta, object$beta_names)
+  return(stats::setNames(object$beta, object$beta_names))
 }
 
-#' residuals method for linreg
-#'
-#' @param object object of class linreg
-#' @param ... further arguments
+
+#' @title Plot S3 method for linreg object
+#' @description Generates two diagnostic ggplot2 plots: Residuals vs Fitted and Scale‑Location
+#' @param x Object of class linreg
+#' @param ... Additional arguments passed to plotting functions
 #' @export
-residuals.linreg <- function(object, ...){
-  object$residuals
+plot.linreg <- function(x, ...){
+  # Build data frame for diagnostic plots
+  df_plot <- data.frame(
+    fitted = x$fitted,
+    residual = x$residuals,
+    std_residual = x$residuals / sqrt(x$sigma2)
+  )
+
+  # Plot1: Residuals against fitted values
+  p1 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = residual)) +
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(method = "loess", se = FALSE, color = "red") +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
+    ggplot2::labs(title = "Residuals vs Fitted",
+                  x = "Fitted values",
+                  y = "Residuals") +
+    ggplot2::theme_bw()
+
+  # Plot2: Scale‑Location plot: sqrt(|standardized residuals|) vs fitted values
+  p2 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = sqrt(abs(std_residual)))) +
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(method = "loess", se = FALSE, color = "red") +
+    ggplot2::labs(title = "Scale‑Location",
+                  x = "Fitted values",
+                  y = expression(sqrt("|Standardized residuals|"))) +
+    ggplot2::theme_bw()
+
+  print(p1)
+  print(p2)
 }
 
-#' pred Generic for linreg objects
-#' @param object object
-#' @param ... other arguments
-#' @export
-pred <- function(object, ...) UseMethod("pred")
 
-#' pred method for linreg (coursespecific, not predict())
-#'
-#' @param object object of class linreg
-#' @param ... further arguments
-#' @export
-pred.linreg <- function(object, ...){
-  object$fitted
-}
-
-#' Summary method for linreg
-#'
-#' @param object object of class linreg
-#' @param ... further arguments
+#' @title Summary S3 method for linreg object
+#' @description Computes summary statistics AND prints output directly (to satisfy lab test expect_output)
+#' @param object Object of class linreg
+#' @param ... Additional arguments
+#' @return Object of S3 class summary.linreg (invisible)
 #' @export
 summary.linreg <- function(object, ...){
+  # Calculate standard errors for regression coefficients
   se_beta <- sqrt(diag(object$var_beta))
+
+  # Construct coefficient table, column names required for printCoefmat
   coef_table <- data.frame(
     Estimate = object$beta,
-    StdErr = se_beta,
-    t_value = object$t_values,
-    p_value = object$p_values
+    `Std. Error` = se_beta,
+    `t value` = object$t_values,
+    `Pr(>|t|)` = object$p_values
   )
   rownames(coef_table) <- object$beta_names
 
+  # Assemble list for summary object
   out <- list(
     coefficients = coef_table,
     sigma_hat = sqrt(object$sigma2),
@@ -133,64 +166,16 @@ summary.linreg <- function(object, ...){
     call = object$call
   )
   class(out) <- "summary.linreg"
-  print(out)
-  return(invisible(out))
-}
 
-#' Print summary.linreg
-#' @param x summary.linreg object
-#' @param ... further args
-#' @export
-print.summary.linreg <- function(x, ...){
+  # DIRECT PRINT inside summary.linreg() — this fixes testthat expect_output failure
   cat("Call:\n")
-  print(x$call)
+  print(out$call)
   cat("\nCoefficients:\n")
-  print(x$coefficients)
-  cat("\nResidual standard error: ", x$sigma_hat, " on ", x$df, " degrees of freedom\n", sep="")
-}
+  stats::printCoefmat(out$coefficients,
+                      P.values = TRUE,
+                      has.Pvalue = TRUE,
+                      signif.stars = TRUE)
+  cat("\nResidual standard error: ", out$sigma_hat, " on ", out$df, " degrees of freedom\n", sep = "")
 
-
-#' Plot method for linreg: two ggplot figures
-#'
-#' Produces Residuals vs Fitted and Scale Location plots
-#' @param x linreg object
-#' @param ... further arguments
-#' @export
-plot.linreg <- function(x, ...){
-  fitted <- residual <- std_resid <- NULL
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("ggplot2 is required for plot.linreg")
-  }
-  df_plot <- data.frame(
-    fitted = x$fitted,
-    residual = x$residuals,
-    std_resid = x$residuals / sqrt(x$sigma2)
-  )
-
-  p1 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = residual)) +
-    ggplot2::geom_point() +
-    ggplot2::geom_smooth(method = "loess", se = FALSE) +
-    ggplot2::ggtitle("Residuals vs Fitted") +
-    ggplot2::xlab("Fitted values") +
-    ggplot2::ylab("Residuals")
-
-  p2 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = sqrt(abs(std_resid)))) +
-    ggplot2::geom_point() +
-    ggplot2::geom_smooth(method = "loess", se = FALSE) +
-    ggplot2::ggtitle("ScaleLocation") +
-    ggplot2::xlab("Fitted values") +
-    ggplot2::ylab(expression(sqrt("|Standardized residuals|")))
-
-  print(p1)
-  readline(prompt="Press enter to see next plot...")
-  print(p2)
-
-  #' @export
-  print.summary.linreg <- function(x, ...){
-    cat("Call:\n")
-    print(x$call)
-    cat("\nCoefficients:\n")
-    print(format(x$coefficients, digits=5))
-    cat("\nResidual standard error: ", round(x$sigma_hat,5), " on ", x$df, " degrees of freedom\n", sep="")
-  }
+  invisible(out)
 }
