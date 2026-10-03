@@ -1,0 +1,16 @@
+---
+title: "Introduction to linreg package"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 5
+)
+library(mylinreg)
+data(iris)

@@ -7,8 +7,13 @@ S3method(print,linreg)
 S3method(summary,linreg)
 export(linreg)
 export(pred)
+importFrom(graphics,
+  lines,
+  plot
+)
 importFrom(stats,
   fitted,
+  lowess,
   printCoefmat,
   residuals
 )

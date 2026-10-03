@@ -94,40 +94,36 @@ coef.linreg <- function(object, ...){
 
 #' @title Plot S3 method for linreg object
 #' @description Generates two diagnostic ggplot2 plots: Residuals vs Fitted and ScaleLocation
+#' @importFrom graphics plot lines
+#' @importFrom stats lowess
 #' @param x Object of class linreg
 #' @param ... Additional arguments passed to plotting functions
 #' @export
 plot.linreg <- function(x, ...){
-  # Build data frame for diagnostic plots
-  residual <- NULL
-  std_residual <- NULL
-  df_plot <- data.frame(
-    fitted = x$fitted,
-    residual = x$residuals,
-    std_residual = x$residuals / sqrt(x$sigma2)
-  )
+  fitted_vals <- x$fitted
+  resid_vals <- x$residuals
+  std_res <- resid_vals / sqrt(x$sigma2)
+  sqrt_abs_std <- sqrt(abs(std_res))
 
-  # Plot1: Residuals against fitted values
-  p1 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = residual)) +
-    ggplot2::geom_point() +
-    ggplot2::geom_smooth(method = "loess", se = FALSE, color = "red") +
-    ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
-    ggplot2::labs(title = "Residuals vs Fitted",
-                  x = "Fitted values",
-                  y = "Residuals") +
-    ggplot2::theme_bw()
+  # Plot 1 Residuals vs Fitted
+  plot(fitted_vals, resid_vals,
+       main = "Residuals vs Fitted",
+       xlab = "Fitted values",
+       ylab = "Residuals",
+       pch = 19, cex = 0.6)
+  lines(lowess(fitted_vals, resid_vals), col = "red", lwd = 2)
 
-  # Plot2: ScaleLocation plot: sqrt(|standardized residuals|) vs fitted values
-  p2 <- ggplot2::ggplot(df_plot, ggplot2::aes(x = fitted, y = sqrt(abs(std_residual)))) +
-    ggplot2::geom_point() +
-    ggplot2::geom_smooth(method = "loess", se = FALSE, color = "red") +
-    ggplot2::labs(title = "ScaleLocation",
-                  x = "Fitted values",
-                  y = expression(sqrt("|Standardized residuals|"))) +
-    ggplot2::theme_bw()
+  if(interactive()) readline(prompt = "Press Enter for next plot...")
 
-  print(p1)
-  print(p2)
+  # Plot2 Scale-Location
+  plot(fitted_vals, sqrt_abs_std,
+       main = "Scale-Location",
+       xlab = "Fitted values",
+       ylab = expression(sqrt(abs("Standardized residuals"))),
+       pch = 19, cex = 0.6)
+  lines(lowess(fitted_vals, sqrt_abs_std), col = "red", lwd = 2)
+
+  return(invisible())
 }
 
 
