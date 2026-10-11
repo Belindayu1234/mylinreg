@@ -1,0 +1,48 @@
+---
+title: "Ridge Regression Demo"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ridge regression demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+encoding: UTF‑8
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+library(mylinreg)
+if(requireNamespace("mlbench",quietly=TRUE)){
+  library(mlbench)
+  data(BostonHousing)
+}
+if(requireNamespace("caret",quietly=TRUE)) library(caret)
+```
+
+## Ridge trace plot
+We visualize how regression coefficients change with different penalty parameter $\lambda$ in ridge regression:
+$\hat{\beta}^{ridge} = (X^\top X + \lambda I)^{-1}X^\top y$
+
+
+```{r ridge-plot}
+lambda_seq <- exp(seq(log(0.1), log(500), length.out = 25))
+coef_mat <- matrix(nrow = length(lambda_seq), ncol = 13)
+
+form <- medv ~ crim + zn + indus + chas + nox + rm + age + dis + rad + tax + ptratio + b + lstat
+
+for(i in seq_along(lambda_seq)){
+  fit <- ridgereg(form, data = BostonHousing, lambda = lambda_seq[i])
+  coef_mat[i,] <- coef(fit)[-1]
+}
+
+matplot(lambda_seq, coef_mat, type = "l", lty =1, log="x",
+        xlab = "Lambda", ylab = "Coefficients",
+        main = "Ridge trace plot, custom ridgereg function")
+legend("topright", colnames(BostonHousing)[1:13], lty=1, col=1:13, cex=0.45)
+```
