@@ -34,6 +34,9 @@ jobs:
           r-version: ${{ matrix.r-version }}
           use-public-rspm: true
 
+      - name: Install rcmdcheck
+        run: R -e 'install.packages("rcmdcheck")'
+
       - name: Install dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
 
