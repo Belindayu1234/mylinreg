@@ -6,6 +6,10 @@
 # See https://github.com/r-lib/actions/tree/master/examples#readme for
 # additional example workflows available for the R community.
 
+concurrency:
+  group: ${{ github.workflow }}‑${{ github.ref }}
+  cancel-in-progress: true
+
 name: R
 
 on:
@@ -19,7 +23,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu‑latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         r-version: ['4.3.1']
