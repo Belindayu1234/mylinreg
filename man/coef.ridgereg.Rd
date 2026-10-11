@@ -2,7 +2,7 @@
 % Please edit documentation in R/ridgereg.R
 \name{coef.ridgereg}
 \alias{coef.ridgereg}
-\title{coef for ridgereg}
+\title{Extract coefficients from ridgereg object}
 \usage{
 \method{coef}{ridgereg}(object, ...)
 }
@@ -12,5 +12,5 @@
 \item{...}{ignore}
 }
 \description{
-coef for ridgereg
+Extract coefficients from ridgereg object
 }

@@ -5,3 +5,4 @@
 ^Meta$
 ^.gitlab-ci.yml$
 ^.gitignore$
+^\.github$

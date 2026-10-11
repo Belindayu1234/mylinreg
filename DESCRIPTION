@@ -1,5 +1,5 @@
 Package: mylinreg
-Title: Linear Regression implemented by matrix algebra
+Title: Linear and Ridge Regression implemented by matrix algebra
 Version: 0.1.0
 Authors@R: c(
     person(
@@ -12,7 +12,7 @@ Authors@R: c(
       role = c("aut")
     )
   )
-Description: Implements linear regression using matrix algebra for Advanced R course Lab4.
+Description: Implements ordinary linear regression and ridge regression using matrix algebra for Advanced R course.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -25,7 +25,8 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     mlbench,
-    caret
+    caret,
+    leaps
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
 VignetteBuilder: knitr

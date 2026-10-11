@@ -1,7 +1,6 @@
 # mylinreg
 
-
-[![pipeline status](https://gitlab.liu.se/qiayu183/mylinreg/badges/main/pipeline.svg)](https://gitlab.liu.se/qiayu183/mylinreg/-/commits/main)
+[![R‑CMD‑Check](https://github.com/Belindayu1234/mylinreg/actions/workflows/R-package.yml/badge.svg)](https://github.com/Belindayu1234/mylinreg/actions/workflows/R-package.yml)
 
 [![R-CMD-check.yaml](https://github.com/wenli420/lab4advr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/wenli420/lab4advr/actions/workflows/R-CMD-check.yaml)
 

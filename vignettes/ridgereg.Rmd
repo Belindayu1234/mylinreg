@@ -23,6 +23,7 @@ if(requireNamespace("mlbench",quietly=TRUE)){
   data(BostonHousing)
 }
 if(requireNamespace("caret",quietly=TRUE)) library(caret)
+if(requireNamespace("leaps",quietly=TRUE)) library(leaps)
 ```
 
 ## Ridge trace plot
@@ -46,3 +47,114 @@ matplot(lambda_seq, coef_mat, type = "l", lty =1, log="x",
         main = "Ridge trace plot, custom ridgereg function")
 legend("topright", colnames(BostonHousing)[1:13], lty=1, col=1:13, cex=0.45)
 ```
+
+```{r split-data}
+set.seed(123)
+train_idx <- createDataPartition(BostonHousing$medv, p=0.7, list = FALSE)
+train_df <- BostonHousing[train_idx,]
+test_df  <- BostonHousing[-train_idx,]
+```
+
+```{r lm-forward}
+set.seed(123)
+fit_lm <- train(medv ~ ., data = train_df, method = "lm", trControl = trainControl(method = "none"))
+fit_forward <- NULL
+# if(requireNamespace("leaps", quietly = TRUE)){
+#   set.seed(123)
+#   ctrl_fwd <- trainControl(method = "cv", number = 10)
+#   fit_forward <- train(medv ~ ., data = train_df,
+#                        method = "leapForward",
+#                        trControl = ctrl_fwd,
+#                        tuneGrid = data.frame(nvmax = 0:13))
+# }
+
+```
+
+```{r caret-custom-model}
+# Wrap custom `ridgereg()` for caret model interface.
+ridgereg_caret <- list(
+  label = "Ridge regression custom implementation",
+  library = "mylinreg",
+  type = "Regression",
+  parameters = data.frame(parameter = "lambda", class = "numeric", label = "Penalty lambda"),
+  grid = function(x, y, len = NULL, search = "grid") {
+    data.frame(lambda = exp(seq(log(0.01), log(200), length.out = len)))
+  },
+  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
+    dat <- as.data.frame(x)
+    dat$y <- y
+    model <- ridgereg(y ~ ., data = dat, lambda = param$lambda)
+    model$lambda <- param$lambda
+    model
+  },
+  predict = function(modelFit, newdata, preProc = NULL, submodels = NULL) {
+    predict(modelFit, newdata = newdata)
+  },
+  prob = NULL
+)
+```
+
+```{r cv-ridge,eval=FALSE}
+suppressPackageStartupMessages(library(caret))
+set.seed(123)
+
+ridgereg_caret <- list(
+  label = "Ridge regression custom implementation",
+  library = "mylinreg",
+  type = "Regression",
+  parameters = data.frame(parameter = "lambda", class = "numeric", label = "Penalty lambda"),
+  grid = function(x, y, len = NULL, search = "grid") {
+    data.frame(lambda = exp(seq(log(0.01), log(200), length.out = len)))
+  },
+  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
+    dat <- as.data.frame(x)
+    dat$y <- y
+    model <- ridgereg(y ~ ., data = dat, lambda = param$lambda)
+    model$lambda <- param$lambda
+    model
+  },
+  predict = function(modelFit, newdata, preProc = NULL, submodels = NULL) {
+    predict(modelFit, newdata = newdata)
+  },
+  prob = NULL
+)
+
+ctrl_cv <- trainControl(method = "cv", number = 10)
+fit_ridge <- train(x = train_df[, !names(train_df) == "medv"],
+                   y = train_df$medv,
+                   method = ridgereg_caret,
+                   trControl = ctrl_cv)
+
+fit_ridge
+```
+
+```{r test-eval,eval=FALSE}
+rmse <- function(obs, pred) sqrt(mean((obs - pred)^2))
+
+pred_lm <- predict(fit_lm, newdata = test_df)
+pred_ridge <- predict(fit_ridge, newdata = test_df)
+
+if (!is.null(fit_forward)) {
+  pred_fwd <- predict(fit_forward, newdata = test_df)
+  res_tab <- data.frame(
+    Model = c("Ordinary lm","Forward selection","Ridge (best CV lambda)"),
+    Test_RMSE = c(
+      rmse(test_df$medv, pred_lm),
+      rmse(test_df$medv, pred_fwd),
+      rmse(test_df$medv, pred_ridge)
+    )
+  )
+}else{
+  res_tab <- data.frame(
+    Model = c("Ordinary lm","Ridge (best CV lambda)"),
+    Test_RMSE = c(
+      rmse(test_df$medv, pred_lm),
+      rmse(test_df$medv, pred_ridge)
+    )
+  )
+}
+print(res_tab)
+```
+
+## Conclusion
+Compare test‑set RMSE among models. Discuss overfitting risk for ordinary regression and forward‑selection. Explain how ridge regularization mitigates overfitting by coefficient shrinkage, and comment on practical performance differences observed.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ridgereg.R
 \name{predict.ridgereg}
 \alias{predict.ridgereg}
-\title{predict for ridgereg support newdata}
+\title{Predict method for ridgereg}
 \usage{
 \method{predict}{ridgereg}(object, newdata = NULL, ...)
 }
@@ -14,5 +14,5 @@
 \item{...}{ignore}
 }
 \description{
-predict for ridgereg support newdata
+Predict method for ridgereg
 }

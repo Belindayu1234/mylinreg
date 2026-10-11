@@ -3,7 +3,6 @@
 #' @return ggplot plot object
 #' @importFrom dplyr group_by summarise inner_join
 #' @importFrom ggplot2 ggplot aes geom_point labs
-#' @import nycflights13
 #' @export
 visualize_airport_delays <- function(){
 
@@ -19,9 +18,10 @@ visualize_airport_delays <- function(){
     dplyr::summarise(mean_delay = mean(arr_delay, na.rm = TRUE)) |>
     dplyr::inner_join(airports, by = c("dest" = "faa"))
 
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = df[["lon"]], y = df[["lat"]], colour = df[["mean_delay"]])) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = lon, y = lat, colour = mean_delay)) +
     ggplot2::geom_point() +
-    ggplot2::labs(title = "Mean arrival delay per airport", x="Longitude", y="Latitude")
+    ggplot2::labs(title = "Mean arrival delay per airport",
+                  x="Longitude", y="Latitude", color = "Mean Arrival Delay")
   return(p)
 }
 
