@@ -16,10 +16,16 @@ Description: Implements linear regression using matrix algebra for Advanced R co
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Imports:
+    dplyr,
+    ggplot2,
+    nycflights13
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    mlbench,
+    caret
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
 VignetteBuilder: knitr

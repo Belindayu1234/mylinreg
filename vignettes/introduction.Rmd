@@ -1,18 +1,86 @@
 ---
-title: "Introduction to linreg package"
+title: "Introduction to linreg: Custom Linear Regression Package"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to linreg package}
+  %\VignetteIndexEntry{Introduction‑linreg}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteEncoding{UTF‑8}
+encoding: UTF‑8
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 6,
   fig.height = 5
 )
+```
+
+```{r}
+# 加载你的包
 library(mylinreg)
+library(ggplot2)
 data(iris)
+```
+
+## Overview
+
+This vignette demonstrates the usage of the `linreg()` function implemented in our package.
+`linreg()` fits a linear regression model using ordinary least‑squares and returns an S3 object of class `linreg`.
+We test all implemented S3‑methods: `print`, `plot`, `resid`, `pred`, `coef`, `summary`.
+We use the built‑in `iris` dataset for demonstration.
+
+```{r fit-model}
+mod <- linreg(Petal.Length ~ Sepal.Length + Species, data = iris)
+```
+
+## print() method
+The print() method prints the model call and regression coefficients, similar to base‑R lm print output.
+
+```{r print-demo}
+print(mod)
+```
+
+## coef() method
+coef() returns named vector of regression coefficients.
+
+```{r coef-demo}
+coef(mod)
+```
+
+## resid() method
+resid() returns the vector of model residuals $\hat{e} = y - \hat{y}$.
+
+```{r resid-demo}
+head(resid(mod))
+```
+
+## pred() method
+pred() returns fitted/predicted values $\hat{y}$.
+
+```{r pred-demo}
+head(pred(mod))
+```
+
+## summary() method
+summary() outputs model statistics: coefficient table (estimate, standard error, t‑value, p‑value), residual standard error $\hat{\sigma}$, and degrees of freedom.
+
+```{r summary-demo}
+summary(mod)
+```
+
+## plot() method
+plot() produces two diagnostic ggplot2 plots: Residuals vs Fitted and Scale‑Location plot.
+
+```{r plot-demo, fig.width=7, fig.height=7, warning=FALSE, message=FALSE}
+plot(mod)
+```
+
+## Compare against base lm (validation)
+We can compare against built‑in lm() to verify correctness of our implementation.
+
+```{r compare-lm}
+mod_lm <- lm(Petal.Length ~ Sepal.Length + Species, data = iris)
+coef(mod_lm)
+```
