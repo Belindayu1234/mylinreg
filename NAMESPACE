@@ -2,11 +2,13 @@
 
 S3method(coef,linreg)
 S3method(coef,ridgereg)
+S3method(fitted,ridgereg)
 S3method(plot,linreg)
 S3method(pred,linreg)
 S3method(predict,ridgereg)
 S3method(print,linreg)
 S3method(print,ridgereg)
+S3method(resid,ridgereg)
 S3method(summary,linreg)
 export(linreg)
 export(pred)
@@ -23,13 +25,12 @@ importFrom(ggplot2,
   ggplot,
   labs
 )
-importFrom(graphics,
-  lines,
-  plot
-)
+importFrom(graphics,plot)
 importFrom(stats,
+  coef,
   fitted,
-  lowess,
+  predict,
   printCoefmat,
+  resid,
   residuals
 )

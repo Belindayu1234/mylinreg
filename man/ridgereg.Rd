@@ -4,18 +4,28 @@
 \alias{ridgereg}
 \title{Ridge Regression}
 \usage{
-ridgereg(formula, data, lambda)
+ridgereg(formula, data, lambda = 0)
 }
 \arguments{
-\item{formula}{formula}
+\item{formula}{A model formula, for example \code{y ~ x1 + x2}.}
 
-\item{data}{data.frame}
+\item{data}{A data frame containing the variables in \code{formula}.}
 
-\item{lambda}{numeric penalty parameter >= 0}
+\item{lambda}{A single non-negative number, the ridge penalty.}
 }
 \value{
-ridgereg S3 object
+An object of class \code{ridgereg}: a list with the coefficients,
+  the fitted values, the penalty and the means and standard deviations that
+  were used to standardise the covariates.
 }
 \description{
-Ridge Regression
+Fits a ridge regression model with penalty \code{lambda}. The
+  covariates are standardised before estimation, the intercept is not
+  penalised, and the coefficients are transformed back to the original
+  scale. The penalised problem is solved with a QR decomposition of the
+  row-augmented design matrix, which is the (*) exercise of the bonus lab.
+}
+\examples{
+data(iris)
+ridgereg(Petal.Length ~ Sepal.Length + Sepal.Width, data = iris, lambda = 1)
 }

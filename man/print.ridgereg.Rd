@@ -7,9 +7,12 @@
 \method{print}{ridgereg}(x, ...)
 }
 \arguments{
-\item{x}{ridgereg object}
+\item{x}{A \code{ridgereg} object.}
 
-\item{...}{ignore}
+\item{...}{Ignored.}
+}
+\value{
+\code{x}, invisibly.
 }
 \description{
 Print method for ridgereg

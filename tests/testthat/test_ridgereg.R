@@ -1,42 +1,64 @@
-library(testthat)
-library(MASS)
+data("iris")
 
-test_that("ridgereg compare lm lambda=0", {
-  data(iris)
-  mod1 <- ridgereg(Petal.Length ~ Sepal.Length + Sepal.Width, iris, lambda=0)
-  mod2 <- lm(Petal.Length ~ Sepal.Length + Sepal.Width, iris)
-  expect_equal(unname(coef(mod1)), unname(coef(mod2)), tolerance = 1e-4)
+test_that("ridgereg rejects erroneous input", {
+  expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = iris, lambda = -1))
+  expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = iris, lambda = "a"))
+  expect_error(ridgereg(Petal.Length ~ Sepdal.Width, data = iris))
+  expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = as.matrix(iris)))
 })
 
-test_that("predict works with / without newdata", {
-  data(iris)
-  m <- ridgereg(Petal.Length~Sepal.Length, iris, lambda=1)
-  pred1 <- predict(m)
-  expect_equal(pred1, m$fitted_values)
-  pred2 <- predict(m, newdata = iris[1:10,])
-  expect_length(pred2,10)
+test_that("ridgereg returns a ridgereg object with named coefficients", {
+  mod <- ridgereg(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris,
+                  lambda = 1)
+
+  expect_s3_class(mod, "ridgereg")
+  expect_named(coef(mod), c("(Intercept)", "Sepal.Width", "Sepal.Length"))
+  expect_length(fitted(mod), nrow(iris))
+  expect_length(resid(mod), nrow(iris))
 })
 
-test_that("coef return named coefficients", {
-  data(iris)
-  m <- ridgereg(Petal.Length ~ Sepal.Length + Sepal.Width, iris, lambda=2)
-  expect_named(coef(m), c("(Intercept)","Sepal.Length","Sepal.Width"))
+test_that("lambda = 0 gives the ordinary least squares fit", {
+  mod <- ridgereg(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris,
+                  lambda = 0)
+  ols <- lm(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris)
+
+  expect_equal(unname(coef(mod)), unname(coef(ols)), tolerance = 1e-10)
+  expect_equal(unname(fitted(mod)), unname(fitted(ols)), tolerance = 1e-10)
 })
 
-test_that("Compare with MASS::lm.ridge approximate match",{
-  data(iris)
-  form <- Petal.Length ~ Sepal.Length + Sepal.Width
-  m_mass <- MASS::lm.ridge(form, data = iris, lambda = 5)
-  m_my <- ridgereg(form, data = iris, lambda = 5)
-  # lm.ridge使用SVD实现，允许微小数值差异
-  expect_equal(unname(coef(m_my)), unname(coef(m_mass)), tolerance = 1e-2)
+test_that("coefficients are similar to MASS::lm.ridge", {
+  for (lambda in c(1, 10, 100)) {
+    mod <- ridgereg(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris,
+                    lambda = lambda)
+    mass <- MASS::lm.ridge(Petal.Length ~ Sepal.Width + Sepal.Length,
+                           data = iris, lambda = lambda)
+
+    expect_equal(unname(coef(mod)), unname(as.numeric(coef(mass))),
+                 tolerance = 0.01)
+  }
 })
 
-test_that("large lambda shrink coefficients toward zero",{
-  data(iris)
-  m_small <- ridgereg(Petal.Length ~ Sepal.Length+Sepal.Width, iris, lambda = 0.1)
-  m_large <- ridgereg(Petal.Length ~ Sepal.Length+Sepal.Width, iris, lambda = 10000)
-  # large lambda非截距系数趋近0
-  expect_true(abs(coef(m_large)[2]) < abs(coef(m_small)[2]))
-  expect_true(abs(coef(m_large)[3]) < abs(coef(m_small)[3]))
+test_that("predict works with and without newdata", {
+  mod <- ridgereg(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris,
+                  lambda = 1)
+
+  # without newdata: the fitted values
+  expect_equal(predict(mod), mod$fitted_values)
+
+  # with newdata: the manual computation from the coefficients
+  newdata <- iris[1:5, ]
+  manual <- coef(mod)["(Intercept)"] +
+    coef(mod)["Sepal.Width"] * newdata$Sepal.Width +
+    coef(mod)["Sepal.Length"] * newdata$Sepal.Length
+  expect_equal(unname(predict(mod, newdata = newdata)), unname(manual),
+               tolerance = 1e-12)
+})
+
+test_that("the penalty shrinks the coefficients towards zero", {
+  mod <- ridgereg(Petal.Length ~ Sepal.Width + Sepal.Length, data = iris,
+                  lambda = 1e6)
+
+  expect_true(all(abs(coef(mod)[-1]) < 1e-3))
+  expect_equal(unname(coef(mod)["(Intercept)"]), mean(iris$Petal.Length),
+               tolerance = 1e-3)
 })

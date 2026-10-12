@@ -7,12 +7,18 @@
 \method{predict}{ridgereg}(object, newdata = NULL, ...)
 }
 \arguments{
-\item{object}{ridgereg}
+\item{object}{A \code{ridgereg} object.}
 
-\item{newdata}{optional new data frame}
+\item{newdata}{Optional data frame (or matrix) with new covariate values.}
 
-\item{...}{ignore}
+\item{...}{Ignored.}
+}
+\value{
+A numeric vector of predictions.
 }
 \description{
-Predict method for ridgereg
+Returns the fitted values when \code{newdata} is missing,
+  otherwise the predictions for \code{newdata}. The design matrix is built
+  from the stored terms, so the response is not needed in \code{newdata};
+  columns are matched by name and rows with missing values give \code{NA}.
 }

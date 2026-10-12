@@ -9,8 +9,12 @@
 \arguments{
 \item{x}{Object of class linreg}
 
-\item{...}{Additional arguments passed to plotting functions}
+\item{...}{Additional arguments (ignored)}
+}
+\value{
+Invisibly, a list with the two ggplot objects.
 }
 \description{
-Generates two diagnostic ggplot2 plots: Residuals vs Fitted and ScaleLocation
+Two diagnostic ggplot2 plots: Residuals vs Fitted and
+  Scale-Location. The three largest residuals are labelled.
 }

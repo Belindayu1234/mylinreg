@@ -93,37 +93,45 @@ coef.linreg <- function(object, ...){
 
 
 #' @title Plot S3 method for linreg object
-#' @description Generates two diagnostic ggplot2 plots: Residuals vs Fitted and ScaleLocation
-#' @importFrom graphics plot lines
-#' @importFrom stats lowess
+#' @description Two diagnostic ggplot2 plots: Residuals vs Fitted and
+#'   Scale-Location. The three largest residuals are labelled.
+#' @importFrom graphics plot
 #' @param x Object of class linreg
-#' @param ... Additional arguments passed to plotting functions
+#' @param ... Additional arguments (ignored)
+#' @return Invisibly, a list with the two ggplot objects.
 #' @export
 plot.linreg <- function(x, ...){
-  fitted_vals <- x$fitted
-  resid_vals <- x$residuals
-  std_res <- resid_vals / sqrt(x$sigma2)
-  sqrt_abs_std <- sqrt(abs(std_res))
+  d <- data.frame(
+    fitted = as.numeric(x$fitted),
+    residuals = as.numeric(x$residuals),
+    scale_location = sqrt(abs(as.numeric(x$residuals))),
+    label = as.character(seq_along(x$fitted))
+  )
+  # label the three most extreme residuals, like plot.lm()
+  worst <- order(abs(d$residuals), decreasing = TRUE)[1:min(3, nrow(d))]
+  d$label[-worst] <- NA
 
-  # Plot 1 Residuals vs Fitted
-  plot(fitted_vals, resid_vals,
-       main = "Residuals vs Fitted",
-       xlab = "Fitted values",
-       ylab = "Residuals",
-       pch = 19, cex = 0.6)
-  lines(lowess(fitted_vals, resid_vals), col = "red", lwd = 2)
+  p1 <- ggplot2::ggplot(d, ggplot2::aes(x = fitted, y = residuals)) +
+    ggplot2::geom_hline(yintercept = 0, linetype = 2) +
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(method = "loess", formula = y ~ x, se = FALSE,
+                         colour = "red", linewidth = 0.6) +
+    ggplot2::geom_text(ggplot2::aes(label = label), na.rm = TRUE, hjust = -0.2) +
+    ggplot2::labs(title = "Residuals vs Fitted",
+                  x = "Fitted values", y = "Residuals") +
+    ggplot2::theme_minimal()
 
-  if(interactive()) readline(prompt = "Press Enter for next plot...")
+  p2 <- ggplot2::ggplot(d, ggplot2::aes(x = fitted, y = scale_location)) +
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(method = "loess", formula = y ~ x, se = FALSE,
+                         colour = "red", linewidth = 0.6) +
+    ggplot2::labs(title = "Scale-Location", x = "Fitted values",
+                  y = "sqrt(|Residuals|)") +
+    ggplot2::theme_minimal()
 
-  # Plot2 Scale-Location
-  plot(fitted_vals, sqrt_abs_std,
-       main = "Scale-Location",
-       xlab = "Fitted values",
-       ylab = expression(sqrt(abs("Standardized residuals"))),
-       pch = 19, cex = 0.6)
-  lines(lowess(fitted_vals, sqrt_abs_std), col = "red", lwd = 2)
-
-  return(invisible())
+  print(p1)
+  print(p2)
+  invisible(list(p1, p2))
 }
 
 
@@ -167,3 +175,6 @@ summary.linreg <- function(object, ...){
 
   invisible(out)
 }
+
+#' @keywords internal
+utils::globalVariables(c("fitted", "residuals", "scale_location", "label"))
