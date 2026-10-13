@@ -2,10 +2,9 @@
 title: "Ridge Regression Demo"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Ridge regression demo}
+  %\VignetteIndexEntry{Ridge Regression Demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-encoding: UTF‑8
 ---
 
 ```{r setup, include = FALSE}
@@ -13,148 +12,211 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 6,
-  fig.height = 5,
-  warning = FALSE,
-  message = FALSE
+  fig.height = 4,
+  message = FALSE,
+  warning = FALSE
 )
-library(mylinreg)
-if(requireNamespace("mlbench",quietly=TRUE)){
-  library(mlbench)
-  data(BostonHousing)
-}
-if(requireNamespace("caret",quietly=TRUE)) library(caret)
-if(requireNamespace("leaps",quietly=TRUE)) library(leaps)
-```
-
-## Ridge trace plot
-We visualize how regression coefficients change with different penalty parameter $\lambda$ in ridge regression:
-$\hat{\beta}^{ridge} = (X^\top X + \lambda I)^{-1}X^\top y$
-
-
-```{r ridge-plot}
-lambda_seq <- exp(seq(log(0.1), log(500), length.out = 25))
-coef_mat <- matrix(nrow = length(lambda_seq), ncol = 13)
-
-form <- medv ~ crim + zn + indus + chas + nox + rm + age + dis + rad + tax + ptratio + b + lstat
-
-for(i in seq_along(lambda_seq)){
-  fit <- ridgereg(form, data = BostonHousing, lambda = lambda_seq[i])
-  coef_mat[i,] <- coef(fit)[-1]
-}
-
-matplot(lambda_seq, coef_mat, type = "l", lty =1, log="x",
-        xlab = "Lambda", ylab = "Coefficients",
-        main = "Ridge trace plot, custom ridgereg function")
-legend("topright", colnames(BostonHousing)[1:13], lty=1, col=1:13, cex=0.45)
-```
-
-```{r split-data}
 set.seed(123)
-train_idx <- createDataPartition(BostonHousing$medv, p=0.7, list = FALSE)
-train_df <- BostonHousing[train_idx,]
-test_df  <- BostonHousing[-train_idx,]
 ```
 
-```{r lm-forward}
-set.seed(123)
-fit_lm <- train(medv ~ ., data = train_df, method = "lm", trControl = trainControl(method = "none"))
-fit_forward <- NULL
-# if(requireNamespace("leaps", quietly = TRUE)){
-#   set.seed(123)
-#   ctrl_fwd <- trainControl(method = "cv", number = 10)
-#   fit_forward <- train(medv ~ ., data = train_df,
-#                        method = "leapForward",
-#                        trControl = ctrl_fwd,
-#                        tuneGrid = data.frame(nvmax = 0:13))
-# }
+This vignette demonstrates our homemade `ridgereg()` function for ridge regression.
 
+Ordinary least‑squares regression can produce unstable coefficient estimates in the presence of multicollinearity.
+Ridge regression introduces an L2‑penalty term to shrink parameter estimates, controlled by the tuning parameter $\lambda$.
+
+The ridge estimator is given by
+
+$$\hat{\boldsymbol{\beta}}_{ridge} = (X^\top X+\lambda I)^{-1}X^\top y.$$
+
+We will show coefficient paths, k‑fold cross‑validation for selecting optimal $\lambda$,
+and compare ridge regression results with forward‑subset selection on the BostonHousing dataset.
+
+We use the Boston housing dataset for our ridge regression demonstration. Our target variable is `medv`, the median house value.
+
+```{r libraries}
+library(mylinreg)   # our package: ridgereg() and linreg()
+library(mlbench)    # BostonHousing data
+library(caret)      # data splitting, train(), cross-validation
+library(ggplot2)
+
+data("BostonHousing")
 ```
 
-```{r caret-custom-model}
-# Wrap custom `ridgereg()` for caret model interface.
-ridgereg_caret <- list(
-  label = "Ridge regression custom implementation",
-  library = "mylinreg",
-  type = "Regression",
-  parameters = data.frame(parameter = "lambda", class = "numeric", label = "Penalty lambda"),
-  grid = function(x, y, len = NULL, search = "grid") {
-    data.frame(lambda = exp(seq(log(0.01), log(200), length.out = len)))
-  },
-  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
-    dat <- as.data.frame(x)
-    dat$y <- y
-    model <- ridgereg(y ~ ., data = dat, lambda = param$lambda)
-    model$lambda <- param$lambda
-    model
-  },
-  predict = function(modelFit, newdata, preProc = NULL, submodels = NULL) {
-    predict(modelFit, newdata = newdata)
-  },
-  prob = NULL
-)
-```
+The data set has `r nrow(BostonHousing)` observations of the median house value
+`medv` and `r ncol(BostonHousing) - 1` covariates.
 
-```{r cv-ridge,eval=FALSE}
-suppressPackageStartupMessages(library(caret))
-set.seed(123)
+## Training and test data
 
-ridgereg_caret <- list(
-  label = "Ridge regression custom implementation",
-  library = "mylinreg",
-  type = "Regression",
-  parameters = data.frame(parameter = "lambda", class = "numeric", label = "Penalty lambda"),
-  grid = function(x, y, len = NULL, search = "grid") {
-    data.frame(lambda = exp(seq(log(0.01), log(200), length.out = len)))
-  },
-  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
-    dat <- as.data.frame(x)
-    dat$y <- y
-    model <- ridgereg(y ~ ., data = dat, lambda = param$lambda)
-    model$lambda <- param$lambda
-    model
-  },
-  predict = function(modelFit, newdata, preProc = NULL, submodels = NULL) {
-    predict(modelFit, newdata = newdata)
-  },
-  prob = NULL
-)
+```{r split}
+train_idx <- createDataPartition(BostonHousing$medv, p = 0.7, list = FALSE)
+train_df <- BostonHousing[train_idx, ]
+test_df <- BostonHousing[-train_idx, ]
 
 ctrl_cv <- trainControl(method = "cv", number = 10)
-fit_ridge <- train(x = train_df[, !names(train_df) == "medv"],
-                   y = train_df$medv,
-                   method = ridgereg_caret,
-                   trControl = ctrl_cv)
-
-fit_ridge
-```
-
-```{r test-eval,eval=FALSE}
 rmse <- function(obs, pred) sqrt(mean((obs - pred)^2))
 
+dim(train_df)
+dim(test_df)
+```
+
+## Ordinary linear regression
+
+```{r lm-model}
+fit_lm <- train(medv ~ ., data = train_df, method = "lm", trControl = ctrl_cv)
+fit_lm$results[, c("RMSE", "Rsquared")]
+
+rmse_lm_train <- rmse(train_df$medv, predict(fit_lm, newdata = train_df))
+rmse_lm_train
+```
+
+## Forward selection
+
+Forward selection is a greedy subset‑selection approach.
+It starts with empty model and iteratively adds one predictor that gives the largest improvement in model performance, until no further improvement can be made.
+We compare the prediction performance from forward‑selected subset versus full‑model ridge regression.
+
+`method = "leapForward"` uses the `leaps` package. The grid `nvmax = 1:p`
+covers models with 1 up to all `r ncol(train_df) - 1` covariates, and the
+intercept-only model (0 covariates) is fitted separately, so models with
+0, 1, ..., p covariates are all compared.
+
+```{r forward}
+fit_forward <- train(
+  medv ~ .,
+  data = train_df,
+  method = "leapForward",
+  trControl = ctrl_cv,
+  tuneGrid = data.frame(nvmax = 1:(ncol(train_df) - 1))
+)
+
+fit_forward$bestTune
+head(fit_forward$results[order(fit_forward$results$RMSE),
+                         c("nvmax", "RMSE")])
+
+## Intercept-only model, for the comparison with 0 covariates.
+null_fit <- lm(medv ~ 1, data = train_df)
+
+data.frame(
+  model = c("intercept only", "OLS (all covariates)", "forward selection"),
+  covariates = c(0, ncol(train_df) - 1, fit_forward$bestTune$nvmax),
+  train_RMSE = round(c(
+    rmse(train_df$medv, predict(null_fit, newdata = train_df)),
+    rmse_lm_train,
+    rmse(train_df$medv, predict(fit_forward, newdata = train_df))
+  ), 3)
+)
+```
+
+## A custom caret model for ridgereg()
+
+`caret::train()` accepts a custom model: `fit()` estimates the model for one
+value of the tuning parameter and `predict()` scores new data.
+
+```{r custom-model}
+ridgereg_caret <- list(
+  label = "Ridge regression (mylinreg)",
+  library = "mylinreg",
+  type = "Regression",
+  parameters = data.frame(parameter = "lambda",
+                          class = "numeric", label = "lambda"),
+  grid = function(x, y, len = NULL, search = "grid") {
+    data.frame(lambda = 10^seq(-2, 3, length.out = len))
+  },
+  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
+    ridgereg(y ~ ., data = data.frame(y = y, x), lambda = param$lambda)
+  },
+  predict = function(modelFit, newdata, submodels = NULL) {
+    as.numeric(predict(modelFit, newdata = newdata))
+  },
+  prob = NULL,
+  sort = function(x) x[order(x$lambda), ]
+)
+```
+
+## Ridge regression for different values of lambda
+
+First we fit a ridge regression with a manually chosen penalty λ = 1 and inspect coefficient estimates.
+When λ = 0, ridge regression reduces to ordinary least squares regression.
+
+```{r ridge-lambdas}
+lambdas <- c(0, 1, 10, 100)
+
+data.frame(
+  lambda = lambdas,
+  train_RMSE = round(vapply(lambdas, function(l) {
+    fit <- ridgereg(medv ~ ., data = train_df, lambda = l)
+    rmse(train_df$medv, predict(fit, newdata = train_df))
+  }, numeric(1)), 3)
+)
+```
+
+## Tuning lambda with 10-fold cross-validation
+
+The choice of λ is critical. We use k‑fold cross‑validation to find the optimal penalty that minimises test‑set mean squared error.
+
+```{r cv-ridge}
+fit_ridge <- train(
+  medv ~ .,
+  data = train_df,
+  method = ridgereg_caret,
+  trControl = ctrl_cv,
+  tuneGrid = data.frame(lambda = 10^seq(-2, 3, length.out = 12))
+)
+
+best_lambda <- fit_ridge$bestTune$lambda
+fit_ridge$results[, c("lambda", "RMSE")]
+best_lambda
+```
+
+```{r cv-plot}
+ggplot(fit_ridge$results, aes(x = lambda, y = RMSE)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = best_lambda, linetype = 2) +
+  scale_x_log10() +
+  labs(title = "10-fold cross-validated RMSE",
+       x = expression(lambda), y = "RMSE") +
+  theme_minimal()
+```
+
+The cross-validation selects `lambda =` `r signif(best_lambda, 3)`.
+
+## Evaluation on the test data
+
+```{r test}
 pred_lm <- predict(fit_lm, newdata = test_df)
+pred_forward <- predict(fit_forward, newdata = test_df)
 pred_ridge <- predict(fit_ridge, newdata = test_df)
 
-if (!is.null(fit_forward)) {
-  pred_fwd <- predict(fit_forward, newdata = test_df)
-  res_tab <- data.frame(
-    Model = c("Ordinary lm","Forward selection","Ridge (best CV lambda)"),
-    Test_RMSE = c(
-      rmse(test_df$medv, pred_lm),
-      rmse(test_df$medv, pred_fwd),
-      rmse(test_df$medv, pred_ridge)
-    )
-  )
-}else{
-  res_tab <- data.frame(
-    Model = c("Ordinary lm","Ridge (best CV lambda)"),
-    Test_RMSE = c(
-      rmse(test_df$medv, pred_lm),
-      rmse(test_df$medv, pred_ridge)
-    )
-  )
-}
-print(res_tab)
+data.frame(
+  model = c("OLS (all covariates)", "forward selection",
+            paste0("ridge (lambda = ", signif(best_lambda, 3), ")")),
+  test_RMSE = round(c(rmse(test_df$medv, pred_lm),
+                      rmse(test_df$medv, pred_forward),
+                      rmse(test_df$medv, pred_ridge)), 3)
+)
 ```
 
 ## Conclusion
-Compare test‑set RMSE among models. Discuss overfitting risk for ordinary regression and forward‑selection. Explain how ridge regularization mitigates overfitting by coefficient shrinkage, and comment on practical performance differences observed.
+
+The three models have a similar test RMSE
+(`r round(rmse(test_df$medv, pred_lm), 3)` for OLS,
+`r round(rmse(test_df$medv, pred_forward), 3)` for forward selection and
+`r round(rmse(test_df$medv, pred_ridge), 3)` for ridge). This is expected:
+`BostonHousing` has only `r ncol(train_df) - 1` covariates and little
+collinearity, so there is not much variance for the penalty to remove.
+
+What ridge regression does show is the shrinkage:
+
+```{r shrinkage}
+norm <- function(lambda) {
+  sum(coef(ridgereg(medv ~ ., data = train_df, lambda = lambda))[-1]^2)
+}
+round(c(lambda0 = norm(0), best = norm(best_lambda)), 3)
+```
+
+The L2 norm of the coefficients falls from
+`r round(norm(0), 1)` at `lambda = 0` to `r round(norm(best_lambda), 1)` at the
+tuned penalty. Ridge regression pays off when covariates are many and
+correlated, or when `p > n`: there the OLS solution is unstable (or does not
+exist), while `ridgereg()` still returns finite, shrunken coefficients.
