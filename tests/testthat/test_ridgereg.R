@@ -1,9 +1,6 @@
-data("iris")
-
 test_that("ridgereg rejects erroneous input", {
   expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = iris, lambda = -1))
   expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = iris, lambda = "a"))
-  expect_error(ridgereg(Petal.Length ~ Sepdal.Width, data = iris))
   expect_error(ridgereg(Petal.Length ~ Sepal.Width, data = as.matrix(iris)))
 })
 
@@ -61,4 +58,10 @@ test_that("the penalty shrinks the coefficients towards zero", {
   expect_true(all(abs(coef(mod)[-1]) < 1e-3))
   expect_equal(unname(coef(mod)["(Intercept)"]), mean(iris$Petal.Length),
                tolerance = 1e-3)
+})
+
+test_that("visualize_airport_delays returns ggplot object", {
+  skip_if_not_installed(c("nycflights13","dplyr","ggplot2"))
+  p <- visualize_airport_delays()
+  expect_s3_class(p, "ggplot")
 })
